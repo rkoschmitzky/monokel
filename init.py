@@ -5,7 +5,7 @@ import re
 
 MOUNT_POINTS_IDENTIFIER = "paths"
 
-with open("config_example.py") as f:
+with open("config.py") as f:
     config = f.read()
     # Let's strip all line breaks and spaces where it matters
     config = re.sub("(\n+\s+|\s*(?=:)|(?<=:)\s*)", "", config)

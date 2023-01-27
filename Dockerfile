@@ -3,7 +3,7 @@ FROM python:latest
 
 WORKDIR .
 
-COPY main.py config.py requirements.txt ./
+COPY main.py config.py requirements.txt docker-compose.yml ./
 
 RUN python3 -m venv /opt/venv
 RUN . /opt/venv/bin/activate && pip install -r requirements.txt
