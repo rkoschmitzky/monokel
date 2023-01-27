@@ -1,0 +1,9 @@
+version: '1'
+services:
+  monokel:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+        {VOLUMES}
+    restart: unless-stopped
