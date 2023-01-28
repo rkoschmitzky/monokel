@@ -28,19 +28,22 @@ import re
 MOUNT_POINTS_IDENTIFIER = "paths"
 SERVICE_NAME_DEFAULT = "monokel"
 COMPOSE_VERSION_DEFAULT = "3.0"
+CONFIG_PATH_DEFAULT = "config.py"
 
 
-def generate_docker_compose_file(service: str, compose_version: str):
+def generate_docker_compose_file(config_path, service, compose_version):
+    # type: (str, str, dict) -> None
     """
 
     Args:
+        config_path (str): path to python config file
         service (str): name of the service to set
         compose_version (str): version token for docker compose
 
     Returns:
 
     """
-    with open("config.py") as f:
+    with open(config_path) as f:
         config = f.read()
         # Let's strip all line breaks and spaces where it matters
         config = re.sub("(\n+\s+|\s*(?=:)|(?<=:)\s*)", "", config)
@@ -106,6 +109,11 @@ if __name__ == "__main__":
         epilog="Please use `docker compose` to initialize the service with the .yml file the script created."
     )
     parser.add_argument(
+        "-c", "--config",
+        type=str, default=CONFIG_PATH_DEFAULT,
+        help="Define the filepath to python config file."
+    )
+    parser.add_argument(
         "-sn", "--service_name",
         type=str, default=SERVICE_NAME_DEFAULT,
         help="Set the root task for the job."
@@ -119,6 +127,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     generate_docker_compose_file(
+        config_path=args.config,
         service=args.service_name,
         compose_version=args.compose_version
     )
