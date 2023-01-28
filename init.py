@@ -11,6 +11,11 @@ Script parses the config file and sets up all relevant mount points and injects
 their mapping information into the environment.
 """
 
+# TODO: we might want to consider renaming this script
+#  as it serves more as a build step; this also means
+#  we might want to create the necessary files to a build
+#  subdirectory
+
 # TODO: set up logging
 # TODO: verify template correctness
 # TODO: error handling
@@ -21,7 +26,7 @@ import hashlib
 import re
 
 MOUNT_POINTS_IDENTIFIER = "paths"
-SERVICE_NAME_DEFAULT = "mononel"
+SERVICE_NAME_DEFAULT = "monokel"
 COMPOSE_VERSION_DEFAULT = "3.0"
 
 
@@ -61,7 +66,7 @@ def generate_docker_compose_file(service: str, compose_version: str):
         # Look up our {VOLUMES} placeholder and identify the indent we need to use
         indent_length = len(re.findall(r"(?<=\n)\s+(?=\{VOLUMES\})", template)[0])
 
-        mounts_mapping = {_: hashlib.sha256(_.encode()).hexdigest()[:7] for _ in mount_points}
+        mounts_mapping = {_: hashlib.sha256(_.encode()).hexdigest()[:8] for _ in mount_points}
         replacement = "".join(
             [
                 (r"\n" + " " * indent_length) + "- " +
