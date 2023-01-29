@@ -14,6 +14,7 @@ their mapping information into the environment.
 # TODO: verify template correctness
 # TODO: error handling
 # TODO: encapsulate repeating logic
+# TODO: for external watchdog requirement perform merge (user precedence)
 
 import argparse
 import hashlib
@@ -28,10 +29,10 @@ from pathlib import Path
 MOUNT_POINTS_IDENTIFIER = "paths"
 SERVICE_NAME_DEFAULT = "monokel"
 COMPOSE_VERSION_DEFAULT = "3.0"
-CONFIG_PATH_DEFAULT = Path("../config.py")
-BUILD_PATH_DEFAULT = Path("../build")
+CONFIG_PATH_DEFAULT = Path("../../config.py")
+BUILD_PATH_DEFAULT = Path("../../build")
 SOURCE_PATH = Path(".")
-TEMPLATES_PATH = Path("../templates")
+TEMPLATES_PATH = Path("templates")
 REQUIREMENTS_PATH_DEFAULT = TEMPLATES_PATH.joinpath("requirements.txt")
 DOCKER_COMPOSE_TEMPLATE_PATH = TEMPLATES_PATH.joinpath("docker-compose.yml")
 DOCKERFILE = TEMPLATES_PATH.joinpath("Dockerfile")
