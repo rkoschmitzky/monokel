@@ -6,7 +6,7 @@ Monokel sits on top of [Watchdog](https://pythonhosted.org/watchdog/) and expose
 ### The build step
 To run an event loop that listens from within a docker container we have to set up and build the actual docker-compose file first.
 
-Monokel provides a build script that creates everything the resulting compose file needs to set up the final service. The script itself can be used without requiring any depdendencies. There are several components you can optionally provide and a mandatory python file we call the "config".
+Monokel provides a build script that creates everything the resulting compose file needs to set up the final service. The script itself can be used without requiring any dependencies. There are several components you can optionally provide and a mandatory python file we call the "config".
 
 ### The (python) config
 The idea of the config file is to provide a single entry point for the event loop that will eventually run within the docker container. It defines what [Observer](https://pythonhosted.org/watchdog/api.html#module-watchdog.observers) to run and which [eventhandlers](https://pythonhosted.org/watchdog/api.html#module-watchdog.events) to schedule for given paths. 
