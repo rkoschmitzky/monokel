@@ -11,45 +11,73 @@ Script parses the config file and sets up all relevant mount points and injects
 their mapping information into the environment.
 """
 
-# TODO: we might want to consider renaming this script
-#  as it serves more as a build step; this also means
-#  we might want to create the necessary files to a build
-#  subdirectory
-
-# TODO: set up logging
 # TODO: verify template correctness
 # TODO: error handling
 # TODO: encapsulate repeating logic
 
 import argparse
 import hashlib
-import os
+import logging
 import re
 import shutil
+import sys
+
+from pathlib import Path
+
 
 MOUNT_POINTS_IDENTIFIER = "paths"
 SERVICE_NAME_DEFAULT = "monokel"
 COMPOSE_VERSION_DEFAULT = "3.0"
-CONFIG_PATH_DEFAULT = "../config.py"
-REQUIREMENTS_PATH_DEFAULT = "../"
+CONFIG_PATH_DEFAULT = Path("../config.py")
+BUILD_PATH_DEFAULT = Path("../build")
+SOURCE_PATH = Path(".")
+TEMPLATES_PATH = Path("../templates")
+REQUIREMENTS_PATH_DEFAULT = TEMPLATES_PATH.joinpath("requirements.txt")
+DOCKER_COMPOSE_TEMPLATE_PATH = TEMPLATES_PATH.joinpath("docker-compose.yml")
+DOCKERFILE = TEMPLATES_PATH.joinpath("Dockerfile")
+RUN_FILE = SOURCE_PATH.joinpath("run.py")
 
 
-def generate_docker_compose_file(config_path, service, compose_version):
-    # type: (str, str, dict) -> None
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s | %(message)s',
+    datefmt='%H:%M:%S',
+    stream=sys.stdout
+)
+
+LOG = logging.getLogger("monokel.build")
+
+
+def generate_docker_compose_file(config, requirements, output, service, compose_version):
+    # type: (Path, Path, Path, str, str) -> None
     """
 
     Args:
-        config_path (str): path to python config file
+        config (Path): path to python config file
+        requirements (Path): path to the pip requirements file
+        output (Path): path to output directory
         service (str): name of the service to set
         compose_version (str): version token for docker compose
 
     Returns:
 
     """
-    with open(os.path.abspath(config_path)) as f:
-        config = f.read()
+
+    with config.open() as f:
+        config_content = f.read()
+
+        LOG.debug(f"Current config content: \n{config_content}\n")
+
+        # TODO: add more validations during build stage
+        if not re.search(r"CONFIG\s*=[\s\n\t\\]*\{", config_content):
+            raise ValueError(
+                f"Missing CONFIG variable in given config file '{config}'"
+            )
+
+        LOG.debug(f"Validated `CONFIG` dict in `{config}`.")
+
         # Let's strip all line breaks and spaces where it matters
-        config = re.sub("(\n+\s+|\s*(?=:)|(?<=:)\s*)", "", config)
+        config_content = re.sub("(\n+\s+|\s*(?=:)|(?<=:)\s*)", "", config_content)
 
         mount_points = re.findall(
             r"(?<=\")([^\s,]*?)(?=\")",
@@ -57,7 +85,7 @@ def generate_docker_compose_file(config_path, service, compose_version):
                 " ".join(
                     re.findall(
                         r"(?<=(?:'|\"){}(?:'|\"):\[).*?(?=\])".format(MOUNT_POINTS_IDENTIFIER),
-                        config
+                        config_content
                     )
                 )
             )
@@ -66,13 +94,18 @@ def generate_docker_compose_file(config_path, service, compose_version):
     # Let's remove any potential duplicates
     mount_points = set(mount_points)
 
+    LOG.debug(f"Identified mount pounts: {mount_points}")
+
     # parse template and substitute placeholders
-    with open("../templates/docker-compose.yml") as f:
+    with TEMPLATES_PATH.joinpath("docker-compose.yml").open() as f:
         template = f.read()
         # Look up our {VOLUMES} placeholder and identify the indent we need to use
         indent_length = len(re.findall(r"(?<=\n)\s+(?=\{VOLUMES\})", template)[0])
 
         mounts_mapping = {_: hashlib.sha256(_.encode()).hexdigest()[:8] for _ in mount_points}
+
+        LOG.debug(f"Defined mounts mapping: {mounts_mapping}")
+
         replacement = "".join(
             [
                 (r"\n" + " " * indent_length) + "- " +
@@ -100,32 +133,82 @@ def generate_docker_compose_file(config_path, service, compose_version):
 
         content = re.sub("\{COMPOSE_VERSION\}", compose_version, content)
 
-    # write the .yml file
-    os.makedirs("../build", exist_ok=True)
-    with open("../build/docker-compose.yml", "w+") as f:
+    LOG.info(f"Creating output directory '{output}'...")
+    output.mkdir(exist_ok=True)
+
+    LOG.info(f"Writing docker-compose.yml...")
+    with output.joinpath(DOCKER_COMPOSE_TEMPLATE_PATH.name).open("w+") as f:
         f.write(content)
 
-    shutil.copy(config_path, "../build/config.py", follow_symlinks=True)
-    shutil.copy("../templates/requirements.txt", "../build", follow_symlinks=True)
-    shutil.copy("../templates/Dockerfile", "../build")
-    shutil.copy("run.py", "../build")
+    config_copy = output.joinpath("config.py")
+    LOG.info(f"Copying '{config.resolve()}' -> '{config_copy.resolve()}'...")
+    shutil.copy(config, config_copy, follow_symlinks=True)
+    LOG.info(f"Copying '{requirements.resolve()}' into '{output.resolve()}'...")
+    shutil.copy(requirements, output, follow_symlinks=True)
+    LOG.info(f"Copying '{DOCKERFILE.resolve()}' into '{output.resolve()}'...")
+    shutil.copy(DOCKERFILE, output)
+    LOG.info(f"Copying '{RUN_FILE.resolve()}' into '{output.resolve()}'")
+    shutil.copy(RUN_FILE, output)
+
+    LOG.info(
+        f"Build finished. Continue from '{output.resolve()}' "
+        f"and use docker compose with the included docker-compose.yml."
+    )
+
+
+class ArgType:
+    """ Argument type extensions """
+    @staticmethod
+    def existing_directory(path):
+        # type: (str) -> Path
+
+        path = Path(path)
+        if path.is_dir():
+            return path
+        else:
+            raise argparse.ArgumentTypeError(f"'{path}' is not a valid path.")
+
+    @staticmethod
+    def existing_file(path):
+        # type: (str) -> Path
+
+        path = Path(path)
+        if path.is_file():
+            return path
+        else:
+            raise argparse.ArgumentTypeError(f"'{path}' is not a valid file.")
+
+    @staticmethod
+    def path_skeleton(path):
+        # type: (str) -> Path
+        return Path(path)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="Monokel Initialization",
+        prog="Monokel Build",
         description="",
-        epilog="Please use `docker compose` to initialize the service with the .yml file the script created."
-    )
-    parser.add_argument(
-        "-c", "--config",
-        type=str, default=CONFIG_PATH_DEFAULT,
-        help="Define the filepath to python config file."
+        epilog="Please use `docker compose up <BUILD>/docker-compose.yml` to initialize the service that was created."
     )
     parser.add_argument(
         "-sn", "--service_name",
         type=str, default=SERVICE_NAME_DEFAULT,
-        help="Set the root task for the job."
+        help="The name of the docker service."
+    )
+    parser.add_argument(
+        "-c", "--config",
+        type=ArgType.existing_file, default=CONFIG_PATH_DEFAULT,
+        help="Filepath to python config file."
+    )
+    parser.add_argument(
+        "-r", "--requirements",
+        type=ArgType.existing_file, default=REQUIREMENTS_PATH_DEFAULT,
+        help="Filepath to the pip requirements."
+    )
+    parser.add_argument(
+        "-o", "--output",
+        type=ArgType.path_skeleton, default=BUILD_PATH_DEFAULT,
+        help="Build directory path that will be used to create all required outputs."
     )
     parser.add_argument(
         "-cv", "--compose_version",
@@ -133,10 +216,21 @@ if __name__ == "__main__":
         default=COMPOSE_VERSION_DEFAULT,
         help="Version token for the compose file."
     )
+    parser.add_argument(
+        "-v", "--verbosity",
+        choices=logging._nameToLevel.keys(),
+        default=logging.INFO
+    )
     args = parser.parse_args()
 
+    logging.getLogger("monokel").setLevel(
+        logging.getLevelName(args.verbosity)
+    )
+
     generate_docker_compose_file(
-        config_path=args.config,
+        config=args.config,
+        requirements=args.requirements,
+        output=args.output,
         service=args.service_name,
         compose_version=args.compose_version
     )

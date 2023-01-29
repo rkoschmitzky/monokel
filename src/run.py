@@ -9,7 +9,7 @@ import os
 import re
 import time
 
-LOG = logging.getLogger("monokel.main")
+LOG = logging.getLogger("monokel.run")
 
 HEARTBEAT_RATE = 30
 
