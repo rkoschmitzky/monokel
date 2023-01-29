@@ -1,7 +1,5 @@
 # Monokel
-A simple but flexible observer pipeline for filesystem events from within a docker container.
-
-Monokel sits on top of [Watchdog](https://pythonhosted.org/watchdog/) and exposes an easy way on how to register filesystem event handlers that will run inside a [Docker](https://www.docker.com/) container.
+Monokel sits on top of [Watchdog](https://pythonhosted.org/watchdog/) and exposes an easy way on how to register filesystem event handlers that will eventually run inside a [Docker](https://www.docker.com/) container.
 
 ## Getting Started
 
