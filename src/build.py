@@ -23,12 +23,15 @@ their mapping information into the environment.
 
 import argparse
 import hashlib
+import os
 import re
+import shutil
 
 MOUNT_POINTS_IDENTIFIER = "paths"
 SERVICE_NAME_DEFAULT = "monokel"
 COMPOSE_VERSION_DEFAULT = "3.0"
-CONFIG_PATH_DEFAULT = "config.py"
+CONFIG_PATH_DEFAULT = "../config.py"
+REQUIREMENTS_PATH_DEFAULT = "../"
 
 
 def generate_docker_compose_file(config_path, service, compose_version):
@@ -43,7 +46,7 @@ def generate_docker_compose_file(config_path, service, compose_version):
     Returns:
 
     """
-    with open(config_path) as f:
+    with open(os.path.abspath(config_path)) as f:
         config = f.read()
         # Let's strip all line breaks and spaces where it matters
         config = re.sub("(\n+\s+|\s*(?=:)|(?<=:)\s*)", "", config)
@@ -64,7 +67,7 @@ def generate_docker_compose_file(config_path, service, compose_version):
     mount_points = set(mount_points)
 
     # parse template and substitute placeholders
-    with open("docker-compose.template") as f:
+    with open("../templates/docker-compose.yml") as f:
         template = f.read()
         # Look up our {VOLUMES} placeholder and identify the indent we need to use
         indent_length = len(re.findall(r"(?<=\n)\s+(?=\{VOLUMES\})", template)[0])
@@ -98,8 +101,14 @@ def generate_docker_compose_file(config_path, service, compose_version):
         content = re.sub("\{COMPOSE_VERSION\}", compose_version, content)
 
     # write the .yml file
-    with open("docker-compose.yml", "w+") as f:
+    os.makedirs("../build", exist_ok=True)
+    with open("../build/docker-compose.yml", "w+") as f:
         f.write(content)
+
+    shutil.copy(config_path, "../build/config.py", follow_symlinks=True)
+    shutil.copy("../templates/requirements.txt", "../build", follow_symlinks=True)
+    shutil.copy("../templates/Dockerfile", "../build")
+    shutil.copy("run.py", "../build")
 
 
 if __name__ == "__main__":

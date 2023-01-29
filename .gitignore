@@ -3,3 +3,4 @@ venv
 docker-compose.yml*
 config.py
 __pycache__
+build

@@ -1,3 +1,3 @@
-# monokel
-A simple but flexible observer Pipeline for filesystem events.
+# Monokel
+A simple but flexible observer pipeline for filesystem events from within a docker container.
 

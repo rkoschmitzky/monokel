@@ -1,11 +1,13 @@
+# an example of the resulting docker-compose.yml created
+# via Monokel's build script and the user's provided config,
 version: '3.0'
 services:
   monokel:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: ../Dockerfile
     volumes:
-        # the mount bindings automatically identified based on the config.py
+        # the mount bindings are automatically identified based on the config.py
         # hashed locations will be used and generated automatically
         - /tmp:/8ba9a8a
     environment:
