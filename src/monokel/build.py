@@ -185,7 +185,7 @@ class ArgType:
         return Path(path)
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         prog="Monokel Build",
         description="",
@@ -196,6 +196,9 @@ if __name__ == "__main__":
         type=str, default=SERVICE_NAME_DEFAULT,
         help="The name of the docker service."
     )
+    # TODO: While these can be optional defaults are good for prototyping
+    #  we need to change them to be required without a default once this
+    #  will be installed via pip - we might want to consider env vars
     parser.add_argument(
         "-c", "--config",
         type=ArgType.existing_file, default=CONFIG_PATH_DEFAULT,
@@ -211,6 +214,8 @@ if __name__ == "__main__":
         type=ArgType.path_skeleton, default=BUILD_PATH_DEFAULT,
         help="Build directory path that will be used to create all required outputs."
     )
+    #
+
     parser.add_argument(
         "-cv", "--compose_version",
         choices=["3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "4.0"],
@@ -235,3 +240,7 @@ if __name__ == "__main__":
         service=args.service_name,
         compose_version=args.compose_version
     )
+
+
+if __name__ == "__main__":
+    main()

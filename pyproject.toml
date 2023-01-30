@@ -1,0 +1,40 @@
+[project]
+name = "monokel"
+description = "A simple but flexible and containerized observer pipeline for filesystem events featured by docker."
+readme = "README.md"
+requires-python = ">=3.6"
+license = {file = "LICENSE.md"}
+keywords = ["python", "docker", "events", "pipeline", "docker-compose", "watchdog"]
+authors = [
+  {email = "contact@ricokoschmitzky.com"},
+  {name = "Rico Koschmitzky"}
+]
+maintainers = [
+  {name = "Rico Koschmitzky", email = "contact@ricokoschmitzky.com"}
+]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python",
+  "Operating System :: OS Independent",
+  "License :: OSI Approved :: MIT License"
+]
+
+dynamic = ["version"]
+
+dependencies = []
+
+[project.optional-dependencies]
+watchdog = ["watchdog==2.2.1"]
+
+[project.urls]
+repository = "https://github.com/rkoschmitzky/monokel"
+
+[project.scripts]
+monokel-build = "monokel.build:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = {attr = "monokel.__version__"}

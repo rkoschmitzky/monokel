@@ -4,3 +4,5 @@ docker-compose.yml*
 config.py
 __pycache__
 build
+dist
+*egg-info

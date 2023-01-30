@@ -14,10 +14,10 @@ LOG = logging.getLogger("monokel.run")
 HEARTBEAT_RATE = 30
 
 
-def _validate_config():
+def _validate_config(config):
     from watchdog.observers.api import BaseObserver
 
-    observer = CONFIG.get("observer")
+    observer = config.get("observer")
     if not observer:
         raise KeyError(
             "'observer' entry missing in config.CONFIG or having no value."
@@ -27,7 +27,7 @@ def _validate_config():
             "'observer entry value is not of type watchdog.observers.api.BaseObserver."
         )
 
-    watchers = CONFIG.get("watchers")
+    watchers = config.get("watchers")
     if not watchers:
         raise ValueError(
             "'watchers' entry missing in config.CONFIG or having no value."
@@ -71,7 +71,7 @@ def resolve_path(path, volumes_mapping):
         return volumes_mapping[path]
 
 
-if __name__ == "__main__":
+def main():
     """ Start the event loop...
     
     Load configuration (all required dependencies within it have to be installed via 
@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
     from config import CONFIG
 
-    _validate_config()
+    _validate_config(CONFIG)
 
     observer = CONFIG.get("observer")
 
@@ -115,3 +115,7 @@ if __name__ == "__main__":
         LOG.info("Observer stopped...")
         observer.stop()
         observer.join()
+
+
+if __name__ == "__main__":
+    main()
