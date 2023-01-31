@@ -17,13 +17,13 @@ To run an event loop that observes filesystem events from within the container w
 Monokel provides a build script that will do most of that for you and creates everything the resulting compose file needs to set up the final service. 
 
 ```
-monokel-build --help
+monokel build --help
 ```
 
 The script itself can be used without requiring any dependencies. There are several components you can optionally provide and a mandatory one - the python file we call **_the config_**.
 
 ### The (python) config
-The idea of **_the config_** is to provide a single entry point as a file for the event loop that will eventually run within the docker container. It defines what [Observer](https://pythonhosted.org/watchdog/api.html#module-watchdog.observers) to run and which [eventhandlers](https://pythonhosted.org/watchdog/api.html#module-watchdog.events) to schedule for given paths. 
+The idea of **_the config_** is to provide a single entry point as a file for the event loop that will eventually run within the docker container. It defines what [Observer](https://pythonhosted.org/watchdog/api.html#module-watchdog.observers) to run and which [EventHandlers](https://pythonhosted.org/watchdog/api.html#module-watchdog.events) to schedule for given paths. 
 
 As your eventhandlers might become very specific and require external packages it is by intention that you can make use of them from within the config as long as they can be found in PYPI and installed via pip. See [config requirements](https://github.com/rkoschmitzky/monokel/blob/main/README.md#the-config-requirements).
 

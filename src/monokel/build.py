@@ -1,28 +1,13 @@
-#!/usr/bin/env python
-
-"""
-Script to initialize the docker-compose.yml file
-
-We want to avoid loading the config.py directly to access the CONFIG dict
-information, because we want to have this dependency free, which can only
-be guaranteed if we parse it as text.
-
-Script parses the config file and sets up all relevant mount points and injects
-their mapping information into the environment.
-"""
-
 # TODO: verify template correctness
 # TODO: error handling
 # TODO: encapsulate repeating logic
 # TODO: for external watchdog requirement perform merge (user precedence)
 
-import argparse
 import hashlib
 import os
 import logging
 import re
 import shutil
-import sys
 
 from pathlib import Path
 
@@ -42,19 +27,19 @@ DOCKERFILE = TEMPLATES_PATH.joinpath("Dockerfile")
 RUN_FILE = SOURCE_PATH.joinpath("run.py")
 
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s | %(message)s',
-    datefmt='%H:%M:%S',
-    stream=sys.stdout
-)
-
 LOG = logging.getLogger("monokel.build")
 
 
-def generate_docker_compose_file(config, requirements, output, service, compose_version):
+def build_package(config, requirements, output, service, compose_version):
     # type: (Path, Path, Path, str, str) -> None
     """
+
+    We want to avoid loading the config.py directly to access the CONFIG dict
+    information, because we want to have this dependency free, which can only
+    be guaranteed if we parse it as text.
+
+    Script parses the config file and sets up all relevant mount points and injects
+    their mapping information into the environment.
 
     Args:
         config (Path): path to python config file
@@ -70,7 +55,7 @@ def generate_docker_compose_file(config, requirements, output, service, compose_
     with config.open() as f:
         config_content = f.read()
 
-        LOG.debug(f"Current config content: \n{config_content}\n")
+        LOG.debug(f"Current config content:\n{'-' * 50}\n{config_content}\n{'-' * 50}\n")
 
         # TODO: add more validations during build stage
         if not re.search(r"CONFIG\s*=[\s\n\t\\]*\{", config_content):
@@ -158,92 +143,3 @@ def generate_docker_compose_file(config, requirements, output, service, compose_
         f"Build finished. Continue from '{output.resolve()}' "
         f"and use docker compose with the included docker-compose.yml."
     )
-
-
-class ArgType:
-    """ Argument type extensions """
-    @staticmethod
-    def existing_directory(path):
-        # type: (str) -> Path
-
-        path = Path(path)
-        if path.is_dir():
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f"'{path}' is not a valid path.")
-
-    @staticmethod
-    def existing_file(path):
-        # type: (str) -> Path
-
-        path = Path(path)
-        if path.is_file():
-            return path
-        else:
-            raise argparse.ArgumentTypeError(f"'{path}' is not a valid file.")
-
-    @staticmethod
-    def path_skeleton(path):
-        # type: (str) -> Path
-        return Path(path)
-
-
-def main():
-    parser = argparse.ArgumentParser(
-        prog="Monokel Build",
-        description="",
-        epilog="Please use `docker compose up <BUILD>/docker-compose.yml` to initialize the service that was created."
-    )
-    parser.add_argument(
-        "-sn", "--service_name",
-        type=str, default=SERVICE_NAME_DEFAULT,
-        help="The name of the docker service."
-    )
-    # TODO: While these can be optional defaults are good for prototyping
-    #  we need to change them to be required without a default once this
-    #  will be installed via pip - we might want to consider env vars
-    parser.add_argument(
-        "-c", "--config",
-        type=ArgType.existing_file, default=CONFIG_PATH_DEFAULT,
-        help="Filepath to python config file."
-    )
-    parser.add_argument(
-        "-r", "--requirements",
-        type=ArgType.existing_file, default=REQUIREMENTS_PATH_DEFAULT,
-        help="Filepath to the pip requirements."
-    )
-    parser.add_argument(
-        "-o", "--output",
-        type=ArgType.path_skeleton, default=BUILD_PATH_DEFAULT,
-        help="Build directory path that will be used to create all required outputs."
-    )
-    #
-
-    parser.add_argument(
-        "-cv", "--compose_version",
-        choices=["3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "4.0"],
-        default=COMPOSE_VERSION_DEFAULT,
-        help="Version token for the compose file."
-    )
-    parser.add_argument(
-        "-v", "--verbosity",
-        choices=logging._nameToLevel.keys(),
-        default=logging.INFO
-    )
-    args = parser.parse_args()
-
-    logging.getLogger("monokel").setLevel(
-        logging.getLevelName(args.verbosity)
-    )
-
-    generate_docker_compose_file(
-        config=args.config,
-        requirements=args.requirements,
-        output=args.output,
-        service=args.service_name,
-        compose_version=args.compose_version
-    )
-
-
-if __name__ == "__main__":
-    main()

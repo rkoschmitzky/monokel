@@ -30,7 +30,7 @@ watchdog = ["watchdog==2.2.1"]
 repository = "https://github.com/rkoschmitzky/monokel"
 
 [project.scripts]
-monokel-build = "monokel.build:main"
+monokel = "monokel.cli:cli"
 
 [build-system]
 requires = ["setuptools>=61.0"]
