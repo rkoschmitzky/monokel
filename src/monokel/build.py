@@ -18,6 +18,7 @@ their mapping information into the environment.
 
 import argparse
 import hashlib
+import os
 import logging
 import re
 import shutil
@@ -29,10 +30,12 @@ from pathlib import Path
 MOUNT_POINTS_IDENTIFIER = "paths"
 SERVICE_NAME_DEFAULT = "monokel"
 COMPOSE_VERSION_DEFAULT = "3.0"
-CONFIG_PATH_DEFAULT = Path("../../config.py")
-BUILD_PATH_DEFAULT = Path("../../build")
-SOURCE_PATH = Path(".")
-TEMPLATES_PATH = Path("templates")
+
+SOURCE_PATH = Path(__file__).parent
+TEMPLATES_PATH = SOURCE_PATH.joinpath("templates")
+
+CONFIG_PATH_DEFAULT = SOURCE_PATH.joinpath(os.getenv("MONOKEL_CONFIG", "../../config.py"))
+BUILD_PATH_DEFAULT = SOURCE_PATH.joinpath(os.getenv("MONOKEL_BUILD_DIR", "../../build"))
 REQUIREMENTS_PATH_DEFAULT = TEMPLATES_PATH.joinpath("requirements.txt")
 DOCKER_COMPOSE_TEMPLATE_PATH = TEMPLATES_PATH.joinpath("docker-compose.yml")
 DOCKERFILE = TEMPLATES_PATH.joinpath("Dockerfile")
