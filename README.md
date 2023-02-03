@@ -17,7 +17,7 @@ To run an event loop that observes filesystem events from within the container w
 Monokel provides a build script that will do most of that for you and creates everything the resulting compose file needs to set up the final service. 
 
 ```
-monokel build --help
+$ monokel build --help
 ```
 
 The script itself can be used without requiring any dependencies. There are several components you can optionally provide and a mandatory one - the python file we call **_the config_**.
