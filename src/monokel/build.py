@@ -112,6 +112,9 @@ def build_package(config, requirements, output, service, compose_version):
             [
                 (r"\n" + " " * indent_length) + "- " +
                 f"MOUNT_{v.rsplit('_', 1)[-1]}={k}" for k, v in mounts_mapping.items()
+            ] +
+            [
+                (r"\n" + " " * indent_length) + "- " + "COMPOSE_PROJECT_NAME"
             ]
         )
         content = re.sub("\s+\{ENVIRONMENT\}", replacement, content)
