@@ -9,9 +9,32 @@ import os
 import re
 import time
 
-LOG = logging.getLogger("monokel.run")
 
-HEARTBEAT_RATE = 30
+LOG = logging.getLogger("monokel.run")
+HEARTBEAT_RATE = 60
+
+
+def _patch_events(volumes_mapping):
+    # type: (dict) -> None
+    """ To support our volumes mapping we need to patch FileSystemEvents
+
+    This ensures we keep track of the actual location by resolving our
+    dynamic volume mounts from within the container.
+
+    Args:
+        volumes_mapping (dict): the mappings required for lookup
+    """
+    from watchdog.events import (
+        FileSystemEvent,
+        FileSystemMovedEvent
+    )
+
+    FileSystemEvent.src_path = property(
+        lambda self: resolve_path(self._src_path, volumes_mapping, revert=True)
+    )
+    FileSystemMovedEvent.dest_path = property(
+        lambda self: resolve_path(self._dest_path, volumes_mapping, revert=True)
+    )
 
 
 def _validate_config(config):
@@ -52,23 +75,46 @@ def _get_volume_mappings():
     return mappings
 
 
-def resolve_path(path, volumes_mapping):
-    # type: (str, dict) -> str
+def resolve_path(path, volumes_mapping, revert=False):
+    # type: (str, dict, bool) -> str
     """ get the resolved path for the volume
 
     Args:
         path (str): path to resolve
         volumes_mapping (dict): the mappings required for lookup
+        revert (bool): False - origin -> mounted; True - mounted -> origin
 
     Returns:
         str: the resolved path
     """
-
+    # TODO: this needs proper handling if a given path can't be resolved
     if not os.getenv("CONTAINER"):
         return path
     else:
-        LOG.info("Detected in-container run...")
-        return volumes_mapping[path]
+        LOG.debug("Detected in-container run...")
+
+        if not revert:
+            # directory case
+            result = volumes_mapping.get(path)
+            if result:
+                return result
+            else:
+                # file case
+                return os.path.join(
+                    volumes_mapping.get(os.path.split(path)[0]),
+                    os.path.split(path)[1]
+                )
+        else:
+            # directory case
+            result = next((k for k, v in volumes_mapping.items() if v == path), None)
+            if result:
+                return result
+            else:
+                # file case
+                return os.path.join(
+                    next((k for k, v in volumes_mapping.items() if v == os.path.split(path)[0]), None),
+                    os.path.split(path)[1]
+                )
 
 
 def main():
@@ -79,12 +125,13 @@ def main():
     eventhandlers with the mapped paths.
     """
     volume_mappings = _get_volume_mappings()
-    # TODO: monkey-patch watchdogs FilesystemEvent
-    #  to refer back to the unmounted path
 
+    # TODO: while this works when build we should make this
+    #  configurable via envvar - users might have their config.py for testing elsewhere
     from config import CONFIG
 
     _validate_config(CONFIG)
+    _patch_events(volume_mappings)
 
     observer = CONFIG.get("observer")
 
