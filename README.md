@@ -14,13 +14,13 @@ $ pip install -U monokel
 ### The build step
 To run an event loop that observes filesystem events from within the container we have to configure and build the actual docker-compose file first.
 
-Monokel provides a build script that will do most of that for you and creates everything the resulting compose file needs to set up the final service. 
+Monokel provides a build command that will do most of that for you and creates everything the resulting compose file needs to set up the final service. 
 
 ```
 $ monokel build --help
 ```
 
-The script itself can be used without requiring any dependencies. There are several components you can optionally provide and a mandatory one - the python file we call **_the config_**.
+There are components you can optionally provide and a mandatory one - the python file we call **_the config_**.
 
 ### The (python) config
 The idea of **_the config_** is to provide a single entry point as a file for the event loop that will eventually run within the docker container. It defines what [Observer](https://pythonhosted.org/watchdog/api.html#module-watchdog.observers) to run and which [EventHandlers](https://pythonhosted.org/watchdog/api.html#module-watchdog.events) to schedule for given paths. 
