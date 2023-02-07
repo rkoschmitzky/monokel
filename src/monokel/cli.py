@@ -84,7 +84,7 @@ def cli():
         help="Create a package with all container dependencies and compose file for docker compose",
     )
     build_parser.add_argument(
-        "-sn", "--service_name",
+        "-sn", "--service-name",
         type=str, default=SERVICE_NAME_DEFAULT,
         help="The name of the docker service."
     )
@@ -95,8 +95,13 @@ def cli():
     )
     build_parser.add_argument(
         "-r", "--requirements",
-        type=ArgType.existing_file, default=REQUIREMENTS_PATH_DEFAULT,
+        type=ArgType.existing_file,
         help="Filepath to the pip requirements."
+    )
+    build_parser.add_argument(
+        "-ir", "--infer-requirements",
+        action="store_true",
+        help="Will parse the given config file and automatically creates a pip requirements file."
     )
     build_parser.add_argument(
         "-o", "--output",
@@ -104,7 +109,7 @@ def cli():
         help="Build directory path that will be used to create all required outputs."
     )
     build_parser.add_argument(
-        "-cv", "--compose_version",
+        "-cv", "--compose-version",
         choices=["3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "3.7", "4.0"],
         default=COMPOSE_VERSION_DEFAULT,
         help="Version token for the compose file."
@@ -117,12 +122,24 @@ def cli():
     )
 
     if args.subcommand == "build":
+        if args.requirements and args.infer_requirements:
+            parser.error(
+                "If you want to use the the option to infer requirements "
+                "you can't use the option to provide requirements at the same time."
+            )
+        if not args.requirements and not args.infer_requirements:
+            parser.error(
+                "Either a requirements file has to be provided (-r <requirements_file>) "
+                "or infer_requirements (-ir) needs to be set."
+            )
+
         build_package(
             config=args.config,
             requirements=args.requirements,
             output=args.output,
             service=args.service_name,
-            compose_version=args.compose_version
+            compose_version=args.compose_version,
+            infer_requirements=args.infer_requirements
         )
 
 

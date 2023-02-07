@@ -9,7 +9,10 @@ import logging
 import re
 import shutil
 
+from typing import Optional
 from pathlib import Path
+
+from pipreqs.pipreqs import init as create_requirements
 
 
 MOUNT_POINTS_IDENTIFIER = "paths"
@@ -30,8 +33,8 @@ RUN_FILE = SOURCE_PATH.joinpath("run.py")
 LOG = logging.getLogger("monokel.build")
 
 
-def build_package(config, requirements, output, service, compose_version):
-    # type: (Path, Path, Path, str, str) -> None
+def build_package(config, output, service, compose_version, requirements=None, infer_requirements=False):
+    # type: (Path, Path, str, str, Optional[Path], Optional[bool]) -> None
     """
 
     We want to avoid loading the config.py directly to access the CONFIG dict
@@ -43,10 +46,12 @@ def build_package(config, requirements, output, service, compose_version):
 
     Args:
         config (Path): path to python config file
-        requirements (Path): path to the pip requirements file
         output (Path): path to output directory
         service (str): name of the service to set
         compose_version (str): version token for docker compose
+        requirements (Path): path to the pip requirements file
+        infer_requirements (bool): if True it will try to infer the package requirements automatically
+            using the pipreqs package
 
     Returns:
 
@@ -135,12 +140,39 @@ def build_package(config, requirements, output, service, compose_version):
     config_copy = output.joinpath("config.py")
     LOG.info(f"Copying '{config.resolve()}' -> '{config_copy.resolve()}'...")
     shutil.copy(config, config_copy, follow_symlinks=True)
-    LOG.info(f"Copying '{requirements.resolve()}' into '{output.resolve()}'...")
-    shutil.copy(requirements, output, follow_symlinks=True)
+
     LOG.info(f"Copying '{DOCKERFILE.resolve()}' into '{output.resolve()}'...")
     shutil.copy(DOCKERFILE, output)
     LOG.info(f"Copying '{RUN_FILE.resolve()}' into '{output.resolve()}'")
     shutil.copy(RUN_FILE, output)
+
+    # if given and not handled upfront the given requirements file will have precedence
+    if requirements:
+        LOG.info(f"Copying '{requirements.resolve()}' into '{output.resolve()}'...")
+        shutil.copy(requirements, output, follow_symlinks=True)
+    elif infer_requirements:
+        pipreqs_args = {
+            "<path>": str(output.resolve()),
+            "--pypi-server": None,
+            "--proxy": None,
+            "--use-local": False,
+            "--debug": False,
+            "--ignore": ",".join([".hg", ".svn", ".git", ".tox", "__pycache__", "env", "venv"]),
+            "--no_follow_links": False,
+            "--encoding": None,
+            "--savepath": str(output.joinpath("requirements.txt").resolve()),
+            "--print": None,
+            "--force": True,
+            "--diff": None,
+            "--clean": None,
+            "--mode": None
+        }
+        LOG.info(f"Inferring requirements and writing into '{pipreqs_args['--savepath']}'")
+        create_requirements(pipreqs_args)
+    else:
+        raise AssertionError(
+            "Either a requirements file has to be provided or infer_requirements needs to be set to True."
+        )
 
     LOG.info(
         f"Build finished. Continue from '{output.resolve()}' "

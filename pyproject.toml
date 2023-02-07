@@ -21,10 +21,14 @@ classifiers = [
 
 dynamic = ["version"]
 
-dependencies = []
+dependencies = [
+  "pipreqs==0.4.11"
+]
 
 [project.optional-dependencies]
-watchdog = ["watchdog==2.2.1"]
+watchdog = [
+  "watchdog==2.2.1",
+]
 
 [project.urls]
 repository = "https://github.com/rkoschmitzky/monokel"
