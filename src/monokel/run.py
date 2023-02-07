@@ -28,11 +28,12 @@ def _patch_events(volumes_mapping):
         FileSystemEvent,
         FileSystemMovedEvent
     )
-
-    FileSystemEvent.src_path = property(
+    # TODO: this is broken as we can not know when to resolve
+    #  we should expose this as a new attribute on the event class
+    FileSystemEvent.resolved_src_path = property(
         lambda self: resolve_path(self._src_path, volumes_mapping, revert=True)
     )
-    FileSystemMovedEvent.dest_path = property(
+    FileSystemMovedEvent.resolved_dest_path = property(
         lambda self: resolve_path(self._dest_path, volumes_mapping, revert=True)
     )
 
