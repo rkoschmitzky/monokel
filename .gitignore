@@ -1,7 +1,7 @@
 .idea
 venv
 docker-compose.yml*
-config.py
+*config.py
 __pycache__
 build
 dist
